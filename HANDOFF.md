@@ -1,4 +1,15 @@
-# Kitty handoff — Arc Studio fix required
+# Kitty handoff — mainnet read repair and remaining Studio issues
+
+## Live mainnet read repair verified — 31 October 2026
+
+The missing-pot issue is repaired in production at `https://kitty-blush-beta.vercel.app`. All application changes were authored through the original Arc Studio CLI session and pulled into this repository; contracts were not edited or redeployed, and no new onchain transactions were sent for verification.
+
+- Deployed application source commit: `a3403c0b3c4679370fcf7c9ae82af254b22eae90` (following `5659a93`). Vercel deployment: `dpl_HD14Epdq793ATWcubZF5UjZhCY2n`, READY; URL `https://kitty-ok9y18el3-wattxs-projects.vercel.app`, promoted to the public project domain.
+- Independently verified through the live `/api/arc-rpc` endpoint: chain `5042`, pot count `2`, creator's pot IDs `[0,1]`, pot 0 name `College`, and successful receipt for creation transaction `0x41174b665ecfb881dff80cfebdae89fb5818c9e66c96c754ec59f5a5095f8a41`.
+- Independently verified in the user's native Chrome: `/pot/0` displays `College`, Galaxy USDC, two members, contribution/yield balances and the creator's USDC balance. `/pots` shows both `College` entries linking to `/pot/0` and `/pot/1`, each with two members. `/new` displays actual total assets for Galaxy USDC and Keyrock Prime USDC instead of indefinite Loading.
+- Public Vercel Production/Preview settings added for this repair: `VITE_KITTY_RPC_URL=/api/arc-rpc` and `NPM_CONFIG_LEGACY_PEER_DEPS=true`. The latter is required because Vercel's function builder performs a secondary npm install beyond the configured project install command.
+- The proxy is self-contained ESM with one fixed public Arc mainnet upstream and a read-only JSON-RPC method allowlist. A first deployed version failed due to an extensionless import from `src/onchain-facts`; Arc Studio corrected this by removing that runtime dependency. The corrected unbundled ESM initialization/read check and the live deployed endpoint both pass.
+- Use existing pot 0 for the demo; do not create another pot to compensate for the previous false empty display. The historic diagnostics below are retained as the repair trail. Other previously noted Studio issues, including threshold-change argument encoding, are separate from this repaired read path.
 
 ## Arc Studio CLI repair in progress, 31 October 2026
 
