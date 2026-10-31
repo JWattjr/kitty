@@ -2,23 +2,24 @@
  * /api/arc-rpc — narrow same-origin JSON-RPC proxy for Arc Mainnet.
  *
  * Purpose: browsers cannot reach the Arc mainnet RPC directly when the app is
- * served from a different origin (Vercel) because the public RPC may not echo
- * the correct Access-Control-Allow-Origin for every deployment hostname.
- * Routing reads through this handler makes them same-origin, bypassing CORS.
+ * served from a different origin (Vercel) because the public RPC does not echo
+ * the caller's origin in Access-Control-Allow-Origin.  Routing reads through
+ * this handler makes them same-origin, bypassing CORS.
  *
- * Upstream: the Arc mainnet RPC URL from the onchain-facts registry (chain ID
- * 5042), or the VITE_KITTY_RPC_URL override env var when set to something other
- * than this handler's own path.  The upstream is always fixed at deploy time.
+ * Upstream: the fixed public Arc mainnet RPC endpoint.  This is a protocol-
+ * defined public constant, not a secret.  The handler is intentionally
+ * self-contained — no cross-directory imports — so it compiles cleanly in the
+ * Vercel Node 24 ESM runtime without bundling the frontend source tree.
  *
  * Constraints:
- *   - Only accepts POST (plus OPTIONS for preflight).
+ *   - Only accepts POST (plus OPTIONS for CORS preflight).
  *   - Only forwards an allowlisted set of read-only JSON-RPC methods.
- *   - Does NOT accept arbitrary upstream URLs — not an open proxy.
+ *   - Upstream is hard-coded; this is NOT an open proxy.
  *   - No API keys, authentication, or secrets involved.
  */
 
-// @vercel/node types are provided by Vercel at deploy time; stub them here so
-// the sandbox TypeScript check passes without an extra dependency.
+// @vercel/node types are provided by Vercel at deploy time; stubbed here so
+// the sandbox TypeScript check passes without an extra devDependency.
 type VercelRequest = {
   method?: string
   body: unknown
@@ -31,25 +32,9 @@ type VercelResponse = {
   setHeader(name: string, value: string): void
 }
 
-import { requireChain } from '../src/onchain-facts'
-
-// Arc Mainnet chain ID — must match the deployed contract config.
-const ARC_MAINNET_CHAIN_ID = 5042
-
-// Resolve upstream at module load.  VITE_KITTY_RPC_URL is the app's override
-// var; if it points back to this handler's own path, don't loop — use the
-// registry URL instead.
-function resolveUpstream(): string {
-  const override = process.env.VITE_KITTY_RPC_URL ?? ''
-  // If the override is a relative /api/... path or points to ourselves, ignore it.
-  if (override && !override.includes('/api/arc-rpc')) {
-    return override
-  }
-  // Fall back to the registry URL for Arc Mainnet.
-  return requireChain(ARC_MAINNET_CHAIN_ID).rpcUrls[0]
-}
-
-const UPSTREAM = resolveUpstream()
+// Fixed public Arc mainnet RPC — same URL used by the frontend default config.
+// arc-studio-allow-onchain-literal
+const UPSTREAM = 'https://rpc.mainnet.arc.io' as const
 
 // Read-only JSON-RPC method allowlist.
 // Covers all reads the KittyPots app makes: contract calls, block/log/receipt
