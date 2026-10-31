@@ -1,4 +1,4 @@
-# KittyPots
+# Kitty
 
 Shared USDC money pots for families, friends, and teams on Arc. Members chip in monthly, the pot earns yield via a Circle Earn vault (Morpho, ERC-4626), the group votes on payouts (wedding gifts, housewarmings, a percentage of the pot), and any member can receive an allowance "card" with a weekly or monthly spending limit that draws straight from the pot.
 
@@ -66,6 +66,8 @@ bun run dev
 bun run contracts:build   # forge build
 bun run contracts:test    # forge test
 ```
+
+test-integration/kitty-flow.ts uses Anvil's public default dev keys for a local chain only; never fund those addresses.
 
 ### Lint and typecheck
 

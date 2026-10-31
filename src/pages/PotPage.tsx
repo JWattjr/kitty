@@ -192,7 +192,7 @@ export default function PotPage() {
   const { address } = useAccount()
 
   const { data: potCount } = usePotCount()
-  const { data: potData, isError: potError, fetchStatus, refetch: refetchPot } = usePot(potId)
+  const { data: potData, isError: potError, isLoading: potLoading, error: potFetchError, refetch: refetchPot } = usePot(potId)
   const { data: potVal, refetch: refetchVal } = usePotValue(potId)
   const { data: yieldVal, refetch: refetchYield } = useYieldEarned(potId)
   const { data: membersData, refetch: refetchMembers } = useMembers(potId)
@@ -224,13 +224,13 @@ export default function PotPage() {
 
   const potTuple = potData as readonly [string, string, string, bigint, bigint, number, number, bigint, bigint, bigint] | undefined
 
-  // Out-of-bounds: pot id >= potCount
-  const notFound =
-    (potId === undefined) ||
-    (potCount !== undefined && potId >= (potCount)) ||
-    potError
+  // Definitive not-found: potCount is known and potId is out-of-range.
+  // Do NOT treat an RPC error as not-found — show a retry UI instead.
+  const definitelyNotFound =
+    potId === undefined ||
+    (potCount !== undefined && potId >= potCount)
 
-  if (notFound || (potData && !(potTuple?.[0]))) {
+  if (definitelyNotFound) {
     return (
       <div className="mx-auto max-w-lg px-4 pt-20 text-center space-y-4">
         <div className="display text-2xl font-bold" style={{ color: 'var(--ink)' }}>Pot not found</div>
@@ -244,16 +244,29 @@ export default function PotPage() {
     )
   }
 
-  if (!potData && fetchStatus !== 'idle') {
+  // RPC error — show concise message and retry; never claim the pot doesn't exist
+  if (potError && !potData) {
+    // Viem errors carry a short human-readable .shortMessage; fall back to a
+    // generic note so we never dump raw call payloads or ABI data into the UI.
+    const errMsg = (potFetchError as { shortMessage?: string } | null)?.shortMessage
+      ?? 'Network error — check your connection and try again.'
     return (
-      <div className="mx-auto max-w-lg px-4 pt-12 text-center space-y-2">
-        <div className="w-8 h-8 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto" style={{ color: 'var(--border)' }} />
-        <p className="text-sm" style={{ color: 'var(--muted)' }}>Loading pot…</p>
+      <div className="mx-auto max-w-lg px-4 pt-20 text-center space-y-4">
+        <div className="display text-xl font-bold" style={{ color: 'var(--ink)' }}>Could not load pot</div>
+        <p className="text-sm" style={{ color: 'var(--muted)' }}>{errMsg}</p>
+        <button
+          onClick={() => void refetchPot()}
+          className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold"
+          style={{ background: 'var(--accent)', color: 'white' }}
+        >
+          Retry
+        </button>
       </div>
     )
   }
 
-  if (!potData) {
+  // Still loading
+  if (potLoading || (!potData && !potError)) {
     return (
       <div className="mx-auto max-w-lg px-4 pt-12 text-center space-y-2">
         <div className="w-8 h-8 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto" style={{ color: 'var(--border)' }} />

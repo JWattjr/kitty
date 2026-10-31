@@ -1,3 +1,11 @@
 {
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/arc-rpc.ts": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  }
 }

@@ -73,7 +73,7 @@ function PotCard({ potId, myAddr }: { potId: bigint; myAddr: string }) {
 
 export default function PotsPage() {
   const { address, isConnected } = useAccount()
-  const { data: potIds, isLoading } = usePotsOf(address)
+  const { data: potIds, isLoading, isError, error, refetch } = usePotsOf(address)
   const ids = (potIds as bigint[] | undefined) ?? []
 
   return (
@@ -97,6 +97,20 @@ export default function PotsPage() {
       ) : isLoading ? (
         <div className="flex justify-center py-12">
           <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" style={{ color: 'var(--border)' }} />
+        </div>
+      ) : isError ? (
+        <div className="text-center space-y-4 py-12">
+          <p className="text-sm" style={{ color: 'var(--muted)' }}>
+            {(error as { shortMessage?: string } | null)?.shortMessage
+              ?? 'Could not load your pots — check your connection.'}
+          </p>
+          <button
+            onClick={() => void refetch()}
+            className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold"
+            style={{ background: 'var(--accent)', color: 'white' }}
+          >
+            Retry
+          </button>
         </div>
       ) : ids.length === 0 ? (
         <div className="text-center space-y-4 py-12">

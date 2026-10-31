@@ -8,3 +8,6 @@ broadcast/
 .arc-studio/
 .vercel/
 *.log
+
+.vercel
+.env*
